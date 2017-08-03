@@ -1,9 +1,10 @@
 package com.codenotfound.kafka;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.util.concurrent.TimeUnit;
-
+import com.codenotfound.kafka.consumer.Receiver;
+import com.codenotfound.kafka.producer.Sender;
+import com.codenotfound.kafka.stringconsumer.StringReceiver;
+import com.codenotfound.kafka.stringproducer.StringSender;
+import com.codenotfound.model.Car;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -16,9 +17,9 @@ import org.springframework.kafka.test.rule.KafkaEmbedded;
 import org.springframework.kafka.test.utils.ContainerTestUtils;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import com.codenotfound.kafka.consumer.Receiver;
-import com.codenotfound.kafka.producer.Sender;
-import com.codenotfound.model.Car;
+import java.util.concurrent.TimeUnit;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -31,10 +32,16 @@ public class SpringKafkaApplicationTest {
   private Receiver receiver;
 
   @Autowired
+  private StringSender stringSender;
+
+  @Autowired
+  private StringReceiver stringReceiver;
+
+  @Autowired
   private KafkaListenerEndpointRegistry kafkaListenerEndpointRegistry;
 
   @ClassRule
-  public static KafkaEmbedded embeddedKafka = new KafkaEmbedded(1, true, "json.t");
+  public static KafkaEmbedded embeddedKafka = new KafkaEmbedded(1, true, "json.t", "string.t");
 
   @Before
   public void setUp() throws Exception {
@@ -50,8 +57,11 @@ public class SpringKafkaApplicationTest {
   public void testReceive() throws Exception {
     Car car = new Car("Passat", "Volkswagen", "ABC-123");
     sender.send(car);
+    stringSender.send(car);
 
     receiver.getLatch().await(10000, TimeUnit.MILLISECONDS);
+    stringReceiver.getLatch().await(10000, TimeUnit.MILLISECONDS);
     assertThat(receiver.getLatch().getCount()).isEqualTo(0);
+    assertThat(stringReceiver.getLatch().getCount()).isEqualTo(0);
   }
 }
